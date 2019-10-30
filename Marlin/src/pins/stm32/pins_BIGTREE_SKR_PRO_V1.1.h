@@ -42,11 +42,11 @@
 // Limit Switches
 //
 #define X_MIN_PIN          PB10
-#define X_MAX_PIN          PE15
+#define X_MAX_PIN          PE15 //E0
 #define Y_MIN_PIN          PE12
-#define Y_MAX_PIN          PE10
+#define Y_MAX_PIN          PE10 //E1
 #define Z_MIN_PIN          PG8
-#define Z_MAX_PIN          PG5
+#define Z_MAX_PIN          PG5  //E2 
 
 //
 // Z Probe must be this pins
@@ -159,10 +159,10 @@
 //
 // Temperature Sensors
 //
-#define TEMP_0_PIN         PF4  // T1 <-> E0
+#define TEMP_0_PIN         PF3  // T0 <-> E0
 #define TEMP_1_PIN         PF5  // T2 <-> E1
 #define TEMP_2_PIN         PF6  // T3 <-> E2
-#define TEMP_BED_PIN       PF3  // T0 <-> Bed
+#define TEMP_BED_PIN       PF4  // T1 <-> Bed
 
 //
 // Heaters / Fans
@@ -171,9 +171,9 @@
 #define HEATER_1_PIN       PD14 // Heater1
 #define HEATER_2_PIN       PB0  // Heater1
 #define HEATER_BED_PIN     PD12 // Hotbed
-#define FAN_PIN            PC8  // Fan0
-#define FAN1_PIN           PE5  // Fan1
-#define FAN2_PIN           PE6  // Fan2
+#define FAN_PIN            PC8  // Fan0 // Print FAN
+#define FAN1_PIN           PE5  // Fan1 // Controller FAN
+#define FAN2_PIN           PE6  // Fan2 // 
 
 //
 // Misc. Functions
