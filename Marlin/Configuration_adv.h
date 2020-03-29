@@ -166,7 +166,7 @@
  */
 #if ENABLED(THERMAL_PROTECTION_BED)
   #define THERMAL_PROTECTION_BED_PERIOD 20    // Seconds
-  #define THERMAL_PROTECTION_BED_HYSTERESIS 2 // Degrees Celsius
+  #define THERMAL_PROTECTION_BED_HYSTERESIS 4 // Degrees Celsius def = 2 
 
   /**
    * As described above, except for the bed (M140/M190/M303).
@@ -1859,18 +1859,11 @@
   #endif
   //Leadscrew 8mm/rev & 1.8deg(200/rev) (200*16)/8 
   #if AXIS_IS_TMC(Z)
-<<<<<<< HEAD
-    #define Z_CURRENT    1000
-    #define Z_MICROSTEPS   16
-    #define Z_RSENSE     0.11
-    #define Z_CHAIN_POS    -1
-=======
-    #define Z_CURRENT       800
+    #define Z_CURRENT       1000
     #define Z_CURRENT_HOME  Z_CURRENT
     #define Z_MICROSTEPS     16
     #define Z_RSENSE          0.11
     #define Z_CHAIN_POS      -1
->>>>>>> upstream/bugfix-2.0.x
   #endif
 
   #if AXIS_IS_TMC(Z2)
@@ -2100,12 +2093,7 @@
     #define Y_STALL_SENSITIVITY  3
     //#define Z_STALL_SENSITIVITY  8
     //#define SPI_ENDSTOPS              // TMC2130 only
-<<<<<<< HEAD
     #define IMPROVE_HOMING_RELIABILITY
-=======
-    //#define HOME_USING_SPREADCYCLE
-    //#define IMPROVE_HOMING_RELIABILITY
->>>>>>> upstream/bugfix-2.0.x
   #endif
 
   /**
