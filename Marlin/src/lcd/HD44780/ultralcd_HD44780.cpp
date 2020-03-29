@@ -1,6 +1,6 @@
 /**
  * Marlin 3D Printer Firmware
- * Copyright (c) 2019 MarlinFirmware [https://github.com/MarlinFirmware/Marlin]
+ * Copyright (c) 2020 MarlinFirmware [https://github.com/MarlinFirmware/Marlin]
  *
  * Based on Sprinter and grbl.
  * Copyright (c) 2011 Camiel Gubbels / Erik van der Zalm
@@ -102,7 +102,7 @@
 
 static void createChar_P(const char c, const byte * const ptr) {
   byte temp[8];
-  for (uint8_t i = 0; i < 8; i++)
+  LOOP_L_N(i, 8)
     temp[i] = pgm_read_byte(&ptr[i]);
   lcd.createChar(c, temp);
 }
@@ -414,7 +414,7 @@ void MarlinUI::clear_lcd() { lcd.clear(); }
     else {
       PGM_P p = text;
       int dly = time / _MAX(slen, 1);
-      for (uint8_t i = 0; i <= slen; i++) {
+      LOOP_LE_N(i, slen) {
 
         // Print the text at the correct place
         lcd_put_u8str_max_P(col, line, p, len);
@@ -530,7 +530,7 @@ FORCE_INLINE void _draw_heater_status(const heater_ind_t heater, const char pref
 
   if (prefix >= 0) lcd_put_wchar(prefix);
 
-  lcd_put_u8str(i16tostr3(t1 + 0.5));
+  lcd_put_u8str(i16tostr3rj(t1 + 0.5));
   lcd_put_wchar('/');
 
   #if !HEATER_IDLE_HANDLER
@@ -582,7 +582,7 @@ FORCE_INLINE void _draw_bed_status(const bool blink) {
       #endif
     ));
     if (progress)
-      lcd_put_u8str(ui8tostr3(progress));
+      lcd_put_u8str(ui8tostr3rj(progress));
     else
       lcd_put_u8str_P(PSTR("---"));
     lcd_put_wchar('%');
@@ -631,7 +631,7 @@ void MarlinUI::draw_status_message(const bool blink) {
       lcd_put_u8str_P(PSTR("Dia "));
       lcd_put_u8str(ftostr12ns(filwidth.measured_mm));
       lcd_put_u8str_P(PSTR(" V"));
-      lcd_put_u8str(i16tostr3(planner.volumetric_percent(parser.volumetric_enabled)));
+      lcd_put_u8str(i16tostr3rj(planner.volumetric_percent(parser.volumetric_enabled)));
       lcd_put_wchar('%');
       return;
     }
@@ -829,7 +829,7 @@ void MarlinUI::draw_status_screen() {
                 && !printingIsActive()
               #endif
             ) {
-              xy_pos_t lpos = current_position; toLogical(lpos);
+              const xy_pos_t lpos = current_position.asLogical();
               _draw_axis_value(X_AXIS, ftostr4sign(lpos.x), blink);
               lcd_put_wchar(' ');
               _draw_axis_value(Y_AXIS, ftostr4sign(lpos.y), blink);
@@ -863,7 +863,7 @@ void MarlinUI::draw_status_screen() {
     #if LCD_HEIGHT > 3
 
       lcd_put_wchar(0, 2, LCD_STR_FEEDRATE[0]);
-      lcd_put_u8str(i16tostr3(feedrate_percentage));
+      lcd_put_u8str(i16tostr3rj(feedrate_percentage));
       lcd_put_wchar('%');
 
       char buffer[14];
@@ -902,7 +902,7 @@ void MarlinUI::draw_status_screen() {
               #endif
             }
           lcd_put_wchar(c);
-          lcd_put_u8str(i16tostr3(per));
+          lcd_put_u8str(i16tostr3rj(per));
           lcd_put_wchar('%');
         #endif
       #endif
@@ -941,7 +941,7 @@ void MarlinUI::draw_status_screen() {
     #endif
 
     lcd_put_wchar(LCD_WIDTH - 9, 1, LCD_STR_FEEDRATE[0]);
-    lcd_put_u8str(i16tostr3(feedrate_percentage));
+    lcd_put_u8str(i16tostr3rj(feedrate_percentage));
     lcd_put_wchar('%');
 
     // ========== Line 3 ==========
@@ -1006,40 +1006,41 @@ void MarlinUI::draw_status_screen() {
       int8_t pad = (LCD_WIDTH - utf8_strlen_P(pstr)) / 2;
       while (--pad >= 0) { lcd_put_wchar(' '); n--; }
     }
-    n -= lcd_put_u8str_max_P(pstr, n);
+    n = lcd_put_u8str_ind_P(pstr, itemIndex, n);
     if (valstr) n -= lcd_put_u8str_max(valstr, n);
     for (; n > 0; --n) lcd_put_wchar(' ');
   }
 
   // Draw a generic menu item with pre_char (if selected) and post_char
   void MenuItemBase::_draw(const bool sel, const uint8_t row, PGM_P const pstr, const char pre_char, const char post_char) {
-    uint8_t n = LCD_WIDTH - 2;
     lcd_put_wchar(0, row, sel ? pre_char : ' ');
-    n -= lcd_put_u8str_max_P(pstr, n);
+    uint8_t n = lcd_put_u8str_ind_P(pstr, itemIndex, LCD_WIDTH - 2);
     for (; n; --n) lcd_put_wchar(' ');
     lcd_put_wchar(post_char);
   }
 
-  // Draw an edit menu item with label and value string
-  void MenuEditItemBase::draw(const bool sel, const uint8_t row, PGM_P pstr, const char* const data, const bool pgm) {
-    int8_t n = LCD_WIDTH - 2 - (pgm ? utf8_strlen_P(data) : utf8_strlen(data));
+  // Draw a menu item with a (potentially) editable value
+  void MenuEditItemBase::draw(const bool sel, const uint8_t row, PGM_P const pstr, const char* const data, const bool pgm) {
+    const uint8_t vlen = data ? (pgm ? utf8_strlen_P(data) : utf8_strlen(data)) : 0;
     lcd_put_wchar(0, row, sel ? LCD_STR_ARROW_RIGHT[0] : ' ');
-    n -= lcd_put_u8str_max_P(pstr, n);
-    lcd_put_wchar(':');
-    for (; n > 0; --n) lcd_put_wchar(' ');
-    if (pgm) lcd_put_u8str_P(data); else lcd_put_u8str(data);
+    uint8_t n = lcd_put_u8str_ind_P(pstr, itemIndex, LCD_WIDTH - 2 - vlen);
+    if (vlen) {
+      lcd_put_wchar(':');
+      for (; n; --n) lcd_put_wchar(' ');
+      if (pgm) lcd_put_u8str_P(data); else lcd_put_u8str(data);
+    }
   }
 
-  // Draw the edit screen for an editable menu item
-  void MenuEditItemBase::edit_screen(PGM_P const pstr, const char* const value/*=nullptr*/) {
+  // Low-level draw_edit_screen can be used to draw an edit screen from anyplace
+  void MenuEditItemBase::draw_edit_screen(PGM_P const pstr, const char* const value/*=nullptr*/) {
     ui.encoder_direction_normal();
 
-    lcd_put_u8str_P(0, 1, pstr);
+    uint8_t n = lcd_put_u8str_ind_P(0, 1, pstr, itemIndex, LCD_WIDTH - 1);
     if (value != nullptr) {
       lcd_put_wchar(':');
       int len = utf8_strlen(value);
-      const lcd_uint_t valrow = (utf8_strlen_P(pstr) + 1 + len + 1) > (LCD_WIDTH - 2) ? 2 : 1;   // Value on the next row if it won't fit
-      lcd_put_wchar((LCD_WIDTH - 1) - (len + 1), valrow, ' ');                                   // Right-justified, padded, add a leading space
+      const lcd_uint_t valrow = (n < len + 1) ? 2 : 1;          // Value on the next row if it won't fit
+      lcd_put_wchar((LCD_WIDTH - 1) - (len + 1), valrow, ' ');  // Right-justified, padded, leading space
       lcd_put_u8str(value);
     }
   }
@@ -1090,6 +1091,21 @@ void MarlinUI::draw_status_screen() {
           #endif
           #if HAS_FAN2
             || thermalManager.fan_speed[2]
+          #endif
+          #if HAS_FAN3
+            || thermalManager.fan_speed[3]
+          #endif
+          #if HAS_FAN4
+            || thermalManager.fan_speed[4]
+          #endif
+          #if HAS_FAN5
+            || thermalManager.fan_speed[5]
+          #endif
+          #if HAS_FAN6
+            || thermalManager.fan_speed[6]
+          #endif
+          #if HAS_FAN7
+            || thermalManager.fan_speed[7]
           #endif
         ) leds |= LED_C;
       #endif // FAN_COUNT > 0
@@ -1196,10 +1212,10 @@ void MarlinUI::draw_status_screen() {
         #define _LCD_W_POS 12
         #define _PLOT_X 1
         #define _MAP_X 3
-        #define _LABEL(C,X,Y) lcd_put_u8str(X, Y, C)
-        #define _XLABEL(X,Y) _LABEL("X:",X,Y)
-        #define _YLABEL(X,Y) _LABEL("Y:",X,Y)
-        #define _ZLABEL(X,Y) _LABEL("Z:",X,Y)
+        #define _LABEL(C,X,Y) lcd_put_u8str_P(X, Y, C)
+        #define _XLABEL(X,Y) _LABEL(X_LBL,X,Y)
+        #define _YLABEL(X,Y) _LABEL(Y_LBL,X,Y)
+        #define _ZLABEL(X,Y) _LABEL(Z_LBL,X,Y)
       #else
         #define _LCD_W_POS 8
         #define _PLOT_X 0
@@ -1399,9 +1415,9 @@ void MarlinUI::draw_status_screen() {
        * Print plot position
        */
       lcd_put_wchar(_LCD_W_POS, 0, '(');
-      lcd_put_u8str(ui8tostr3(x_plot));
+      lcd_put_u8str(ui8tostr3rj(x_plot));
       lcd_put_wchar(',');
-      lcd_put_u8str(ui8tostr3(y_plot));
+      lcd_put_u8str(ui8tostr3rj(y_plot));
       lcd_put_wchar(')');
 
       #if LCD_HEIGHT <= 3   // 16x2 or 20x2 display
